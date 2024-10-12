@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #61dafb;
+            text-align: center;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: #2c2c2c;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        li:hover {
+            background-color: #3c3c3c;
+        }
+        .task-info {
+            flex-grow: 1;
+        }
+        .task-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        .task-description {
+            font-size: 0.9em;
+            color: #b0b0b0;
+        }
+        .task-due {
+            font-size: 0.8em;
+            color: #61dafb;
+        }
+        .complete-btn {
+            background: none;
+            border: none;
+            color: #61dafb;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px;
+            transition: color 0.3s ease;
+        }
+        .complete-btn:hover {
+            color: #4fa3d1;
+        }
+        #newTaskForm {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        #newTaskTitle {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            background-color: #2c2c2c;
+            color: #e0e0e0;
+            border-radius: 4px 0 0 4px;
+        }
+        #addTaskBtn {
+            padding: 10px 15px;
+            font-size: 1em;
+            background-color: #61dafb;
+            color: #1e1e1e;
+            border: none;
+            cursor: pointer;
+            border-radius: 0 4px 4px 0;
+            transition: background-color 0.3s ease;
+        }
+        #addTaskBtn:hover {
+            background-color: #4fa3d1;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task Manager</h1>
+    <form id="newTaskForm">
+        <input type="text" id="newTaskTitle" placeholder="Enter new task title" required>
+        <button type="submit" id="addTaskBtn">Add Task</button>
+    </form>
+    <ul id="taskList">
+        {% for task in tasks %}
+            <li id="task-{{ task.id }}">
+                <div class="task-info">
+                    <div class="task-title">{{ task.title }}</div>
+                    {% if task.description %}
+                        <div class="task-description">{{ task.description }}</div>
+                    {% endif %}
+                    {% if task.due_date %}
+                        <div class="task-due">Due: {{ task.due_date }}</div>
+                    {% endif %}
+                </div>
+                <button class="complete-btn" onclick="completeTask({{ task.id }})">
+                    <i class="fas fa-check"></i>
+                </button>
+            </li>
+        {% else %}
+            <li id="no-tasks">No open tasks found.</li>
+        {% endfor %}
+    </ul>
+
+    <script>
+        function completeTask(taskId) {
+            fetch(`/complete_task/${taskId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const taskElement = document.getElementById(`task-${taskId}`);
+                        taskElement.style.opacity = '0';
+                        setTimeout(() => {
+                            taskElement.remove();
+                            if (document.getElementById('taskList').children.length === 0) {
+                                document.getElementById('taskList').innerHTML = '<li id="no-tasks">No open tasks found.</li>';
+                            }
+                        }, 300);
+                    }
+                });
+        }
+
+        document.getElementById('newTaskForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const titleInput = document.getElementById('newTaskTitle');
+            const title = titleInput.value.trim();
+            if (title) {
+                fetch('/add_task', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `title=${encodeURIComponent(title)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const noTasksElement = document.getElementById('no-tasks');
+                        if (noTasksElement) {
+                            noTasksElement.remove();
+                        }
+                        const taskList = document.getElementById('taskList');
+                        const newTaskElement = document.createElement('li');
+                        newTaskElement.id = `task-${data.task.id}`;
+                        newTaskElement.innerHTML = `
+                            <div class="task-info">
+                                <div class="task-title">${data.task.title}</div>
+                            </div>
+                            <button class="complete-btn" onclick="completeTask(${data.task.id})">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        `;
+                        taskList.insertBefore(newTaskElement, taskList.firstChild);
+                        titleInput.value = '';
+                    } else {
+                        alert('Failed to add task. Please try again.');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
