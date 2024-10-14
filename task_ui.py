@@ -10,7 +10,7 @@ API_BASE_URL = "http://10.0.0.138:8002"
 @app.route('/')
 def index():
     # Fetch only open tasks from the API
-    response = requests.get(f"{API_BASE_URL}/tasks", params={"status": "open"})
+    response = requests.get(f"{API_BASE_URL}/tasks", params={"status": "open","userID" : "5729801765"})
     tasks = response.json() if response.status_code == 200 else []
     
     return render_template('index.html', tasks=tasks)
@@ -18,12 +18,16 @@ def index():
 @app.route('/complete_task/<int:task_id>', methods=['POST'])
 def complete_task(task_id):
     # Update the task status to 'completed'
-    response = requests.put(f"{API_BASE_URL}/tasks/{task_id}", json={"status": "completed"})
-    
-    if response.status_code == 200:
+    response = requests.delete(f"{API_BASE_URL}/tasks/{task_id}")
+    print(response)
+    if response.status_code == 204:
         return jsonify({"success": True})
     else:
-        return jsonify({"success": False}), 400
+        return jsonify({
+            "success": False,
+            "error": f"API returned status code {response.status_code}",
+            "response_text": response.text
+        }), 400
 
 @app.route('/add_task', methods=['POST'])
 def add_task():
@@ -32,7 +36,7 @@ def add_task():
         return jsonify({"success": False, "error": "Title is required"}), 400
 
     # Create a new task
-    response = requests.post(f"{API_BASE_URL}/tasks", json={"title": title})
+    response = requests.post(f"{API_BASE_URL}/tasks", json={"title": title,"userID" : "5729801765"})
     
     if response.status_code == 201:
         new_task = response.json()
