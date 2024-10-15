@@ -7,6 +7,11 @@ app = Flask(__name__)
 
 API_BASE_URL = "http://10.0.0.138:8002"
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+
 @app.route('/')
 def index():
     # Fetch only open tasks from the API
