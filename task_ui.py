@@ -18,7 +18,7 @@ def index():
 @app.route('/complete_task/<int:task_id>', methods=['POST'])
 def complete_task(task_id):
     # Update the task status to 'completed'
-    response = requests.delete(f"{API_BASE_URL}/tasks/{task_id}")
+    response = requests.delete(f"{API_BASE_URL}/tasks/{task_id}?userID=5729801765")
     print(response)
     if response.status_code == 204:
         return jsonify({"success": True})
